@@ -18,8 +18,9 @@ type DeviceStatus struct {
 }
 
 type DriverStatus struct {
-	Hello       bool      `json:"hello"`
-	Protocol    *Protocol `json:"protocol"`
-	State       State     `json:"state"`
-	StateDetail string    `json:"state_detail"`
+	Hello                     bool      `json:"hello"`
+	Protocol                  *Protocol `json:"protocol"`
+	State                     State     `json:"state"`
+	StateDetail               string    `json:"state_detail"`
+	HealthCheckIntervalSecond int       `json:"health_check_interval_second"`
 }

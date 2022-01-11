@@ -35,9 +35,13 @@ func (o *MetaOperation) Topic() Topic {
 }
 
 func (o *MetaOperation) ToMessage() (*message.Message, error) {
-	payload, err := json.Marshal(o.value)
-	if err != nil {
-		return nil, err
+	payload := make([]byte, 0)
+	if o.value != nil {
+		var err error
+		payload, err = json.Marshal(o.value)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &message.Message{
 		Topic:   o.Topic().String(),

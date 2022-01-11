@@ -38,11 +38,8 @@ type (
 	MetaDriverService interface {
 		InitializeDriverHandler(protocolID string, handler func(products []*models.Product, devices []*models.Device) error) error
 
-		UpdateProductHandler(protocolID string, handler func(product *models.Product) error) error
-		DeleteProductHandler(protocolID string, handler func(productID string) error) error
-
-		UpdateDeviceHandler(protocolID string, handler func(device *models.Device) error) error
-		DeleteDeviceHandler(protocolID string, handler func(deviceID string) error) error
+		MutateProductHandler(protocolID string, u func(product *models.Product) error, d func(productID string) error) error
+		MutateDeviceHandler(protocolID string, u func(device *models.Device) error, d func(deviceID string) error) error
 	}
 	metaDriverService struct {
 		mb bus.MessageBus
@@ -65,35 +62,33 @@ func (m *metaDriverService) InitializeDriverHandler(protocolID string,
 	})
 }
 
-func (m *metaDriverService) UpdateProductHandler(protocolID string, handler func(product *models.Product) error) error {
+func (m *metaDriverService) MutateProductHandler(protocolID string,
+	u func(product *models.Product) error, d func(productID string) error) error {
 	return m.metaHandler(protocolID, MetaOperationTypeProductMutation, func(o *MetaOperation) error {
+		if len(o.payload) == 0 { // delete the product if the payload is empty
+			return d(o.reqID)
+		}
+
 		v := new(ProductMutation)
 		if err := o.Unmarshal(v); err != nil {
 			return err
 		}
-		return handler(v)
+		return u(v)
 	})
 }
 
-func (m *metaDriverService) DeleteProductHandler(protocolID string, handler func(productID string) error) error {
-	return m.metaHandler(protocolID, MetaOperationTypeProductMutation, func(o *MetaOperation) error {
-		return handler(o.reqID)
-	})
-}
-
-func (m *metaDriverService) UpdateDeviceHandler(protocolID string, handler func(device *models.Device) error) error {
+func (m *metaDriverService) MutateDeviceHandler(protocolID string,
+	u func(device *models.Device) error, d func(deviceID string) error) error {
 	return m.metaHandler(protocolID, MetaOperationTypeDeviceMutation, func(o *MetaOperation) error {
+		if len(o.payload) == 0 { // delete the device if the payload is empty
+			return d(o.reqID)
+		}
+
 		v := new(DeviceMutation)
 		if err := o.Unmarshal(v); err != nil {
 			return err
 		}
-		return handler(v)
-	})
-}
-
-func (m *metaDriverService) DeleteDeviceHandler(protocolID string, handler func(deviceID string) error) error {
-	return m.metaHandler(protocolID, MetaOperationTypeDeviceMutation, func(o *MetaOperation) error {
-		return handler(o.reqID)
+		return u(v)
 	})
 }
 

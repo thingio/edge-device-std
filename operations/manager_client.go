@@ -152,7 +152,7 @@ func (d *dataManagerClient) Read(protocolID, productID, deviceID string,
 		return nil, errors.NewCommonEdgeErrorWrapper(err)
 	}
 	props = make(map[models.ProductPropertyID]*models.DeviceData)
-	if err = rspMsg.Unmarshal(props); err != nil {
+	if err = rspMsg.Unmarshal(&props); err != nil {
 		return nil, errors.NewCommonEdgeError(errors.Internal,
 			fmt.Sprintf("fail to unmarshal the payload of the response"), err)
 	}
@@ -168,8 +168,8 @@ func (d *dataManagerClient) HardRead(protocolID, productID, deviceID string,
 	if err != nil {
 		return nil, err
 	}
-	rspTpc := NewDataOperation(OperationModeUp, protocolID, productID, deviceID, propertyID, DataOperationTypeRead, reqID).Topic().String()
-	errTpc := NewDataOperation(OperationModeUpErr, protocolID, productID, deviceID, propertyID, DataOperationTypeRead, reqID).Topic().String()
+	rspTpc := NewDataOperation(OperationModeUp, protocolID, productID, deviceID, propertyID, DataOperationTypeHardRead, reqID).Topic().String()
+	errTpc := NewDataOperation(OperationModeUpErr, protocolID, productID, deviceID, propertyID, DataOperationTypeHardRead, reqID).Topic().String()
 	rspMsg, err := d.mb.Call(reqMsg, rspTpc, errTpc)
 	if err != nil {
 		return nil, errors.NewCommonEdgeErrorWrapper(err)
@@ -204,14 +204,14 @@ func (d *dataManagerClient) Call(protocolID, productID, deviceID string, methodI
 	ins map[string]*models.DeviceData) (outs map[string]*models.DeviceData, err error) {
 	reqID := NewReqID()
 	request := NewDataOperation(OperationModeDown, protocolID, productID, deviceID, methodID,
-		DataOperationTypeCall, NewReqID())
+		DataOperationTypeCall, reqID)
 	request.SetValue(ins)
 	reqMsg, err := request.ToMessage()
 	if err != nil {
 		return nil, err
 	}
-	rspTpc := NewDataOperation(OperationModeUp, protocolID, productID, deviceID, methodID, DataOperationTypeWrite, reqID).Topic().String()
-	errTpc := NewDataOperation(OperationModeUpErr, protocolID, productID, deviceID, methodID, DataOperationTypeWrite, reqID).Topic().String()
+	rspTpc := NewDataOperation(OperationModeUp, protocolID, productID, deviceID, methodID, DataOperationTypeCall, reqID).Topic().String()
+	errTpc := NewDataOperation(OperationModeUpErr, protocolID, productID, deviceID, methodID, DataOperationTypeCall, reqID).Topic().String()
 	rspMsg, err := d.mb.Call(reqMsg, rspTpc, errTpc)
 	if err != nil {
 		return nil, errors.NewCommonEdgeErrorWrapper(err)
