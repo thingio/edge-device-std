@@ -103,7 +103,7 @@ func (m *metaDriverService) metaHandler(protocolID string, optType MetaOperation
 			return
 		}
 		if err = handler(o); err != nil {
-			m.lg.Errorf(err.Error())
+			m.lg.WithError(err).Errorf("fail to handle the meta operation: %s", schema)
 			return
 		}
 	}, topic); err != nil {

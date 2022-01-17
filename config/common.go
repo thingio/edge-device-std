@@ -5,7 +5,8 @@ type DriverOptions struct {
 	DeviceHealthCheckIntervalSecond   int  `json:"device_health_check_interval_second" yaml:"device_health_check_interval_second"`
 	DeviceAutoReconnect               bool `json:"device_auto_reconnect" yaml:"device_auto_reconnect"` // TODO reconnect automatically by the driver framework
 	DeviceAutoReconnectIntervalSecond int  `json:"device_auto_reconnect_interval_second" yaml:"device_auto_reconnect_interval_second"`
-	DeviceAutoReconnectMaxRetries     int  `json:"device_auto_reconnect_max_retries" yaml:"device_auto_reconnect_max_retries"`
+	// The number of retries for automatic reconnection of the device. If it is 0, there is no limit.
+	DeviceAutoReconnectMaxRetries int `json:"device_auto_reconnect_max_retries" yaml:"device_auto_reconnect_max_retries"`
 }
 
 type ManagerOptions struct {
