@@ -14,6 +14,7 @@ const (
 )
 
 type Property struct {
+	Id           string            `json:"id"`
 	Name         string            `json:"name"`         // Name 为属性的展示名称
 	Desc         string            `json:"desc"`         // Desc 为属性的描述, 通常以名称旁的?形式进行展示
 	Type         PropertyValueType `json:"type"`         // Type 为该属性的数据类型

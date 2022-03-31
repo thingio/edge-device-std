@@ -148,6 +148,8 @@ func subscribe(mb bus.MessageBus, lg *logger.Logger, topic string,
 		return nil, nil, err
 	}
 	return buffer, func() {
+		_ = mb.Unsubscribe(topic)
+
 		close(buffer)
 	}, nil
 }

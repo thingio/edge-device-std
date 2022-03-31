@@ -15,8 +15,10 @@ const (
 )
 
 type Configuration struct {
-	CommonOptions CommonOptions     `json:"common" yaml:"common"`
-	MessageBus    MessageBusOptions `json:"msgbus" yaml:"msgbus"`
+	DriverOptions  DriverOptions     `json:"driver" yaml:"driver"`
+	ManagerOptions ManagerOptions    `json:"manager" yaml:"manager"`
+	LogOptions     LogOptions        `json:"log" yaml:"log"`
+	MessageBus     MessageBusOptions `json:"msgbus" yaml:"msgbus"`
 }
 
 func NewConfiguration() (*Configuration, errors.EdgeError) {

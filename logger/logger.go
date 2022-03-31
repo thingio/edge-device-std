@@ -2,41 +2,59 @@ package logger
 
 import (
 	"github.com/sirupsen/logrus"
+	"github.com/thingio/edge-device-std/config"
+	"gopkg.in/natefinch/lumberjack.v2"
+	"io"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 )
 
-type LogLevel string
+func NewLogger(options *config.LogOptions) (*Logger, error) {
+	root := logrus.NewEntry(logrus.New())
 
-const (
-	DebugLevel LogLevel = "debug"
-	InfoLevel  LogLevel = "info"
-	WarnLevel  LogLevel = "warn"
-	ErrorLevel LogLevel = "errors"
-	FatalLevel LogLevel = "fatal"
-	PanicLevel LogLevel = "panic"
-)
-
-func NewLogger() *Logger {
-	logger := &Logger{
-		logger: logrus.NewEntry(logrus.New()),
+	logLevel, err := logrus.ParseLevel(options.Level)
+	if err != nil {
+		logLevel = logrus.DebugLevel
 	}
-	_ = logger.SetLevel(InfoLevel)
-	return logger
+	root.Logger.Level = logLevel
+
+	var logWriter io.Writer
+	if options.Console {
+		logWriter = os.Stdout
+	} else {
+		logWriter = ioutil.Discard
+		if options.Path != "" {
+			if err := os.Mkdir(filepath.Dir(options.Path), 0664); err != nil {
+				return nil, err
+			}
+			if hook, err := newFileHook(fileConfig{
+				Filename:   options.Path,
+				MaxSize:    options.Size.Max,
+				MaxAge:     options.Age.Max,
+				MaxBackups: options.Backup.Max,
+				Compress:   true,
+				Level:      logLevel,
+				Formatter:  newFormatter(options.Format, false),
+			}); err != nil {
+				return nil, err
+			} else {
+				root.Logger.Hooks.Add(hook)
+			}
+		}
+	}
+
+
+	root.Logger.SetOutput(logWriter)
+	root.Logger.SetFormatter(newFormatter("text", true))
+
+	return &Logger{logger: root}, nil
 }
 
 type Logger struct {
 	logger *logrus.Entry
-}
-
-func (l Logger) SetLevel(level LogLevel) error {
-	lvl, err := logrus.ParseLevel(string(level))
-	if err != nil {
-		return err
-	}
-	l.logger.Logger.SetLevel(lvl)
-	l.logger.Logger.SetOutput(os.Stdout)
-	l.logger.Logger.SetFormatter(&logFormatter{logrus.TextFormatter{FullTimestamp: true, ForceColors: true}})
-	return nil
 }
 
 // WithFields adds a map of fields to the Entry.
@@ -105,4 +123,84 @@ func (f *logFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+type fileConfig struct {
+	Filename   string
+	MaxSize    int
+	MaxAge     int
+	MaxBackups int
+	LocalTime  bool
+	Compress   bool
+	Level      logrus.Level
+	Formatter  logrus.Formatter
+}
+
+type fileHook struct {
+	config fileConfig
+	writer io.Writer
+}
+
+func newFileHook(config fileConfig) (logrus.Hook, error) {
+	hook := fileHook{
+		config: config,
+	}
+
+	var zeroLevel logrus.Level
+	if hook.config.Level == zeroLevel {
+		hook.config.Level = logrus.InfoLevel
+	}
+	var zeroFormatter logrus.Formatter
+	if hook.config.Formatter == zeroFormatter {
+		hook.config.Formatter = new(logrus.TextFormatter)
+	}
+
+	hook.writer = &lumberjack.Logger{
+		Filename:   config.Filename,
+		MaxSize:    config.MaxSize,
+		MaxAge:     config.MaxAge,
+		MaxBackups: config.MaxBackups,
+		LocalTime:  config.LocalTime,
+		Compress:   config.Compress,
+	}
+
+	return &hook, nil
+}
+
+// Levels Levels
+func (hook *fileHook) Levels() []logrus.Level {
+	return []logrus.Level{
+		logrus.PanicLevel,
+		logrus.FatalLevel,
+		logrus.ErrorLevel,
+		logrus.WarnLevel,
+		logrus.InfoLevel,
+		logrus.DebugLevel,
+	}
+}
+
+// Fire Fire
+func (hook *fileHook) Fire(entry *logrus.Entry) (err error) {
+	if hook.config.Level < entry.Level {
+		return nil
+	}
+	b, err := hook.config.Formatter.Format(entry)
+	if err != nil {
+		return err
+	}
+	hook.writer.Write(b)
+	return nil
+}
+
+func newFormatter(format string, color bool) logrus.Formatter {
+	var formatter logrus.Formatter
+	if strings.ToLower(format) == "json" {
+		formatter = &logrus.JSONFormatter{}
+	} else {
+		if runtime.GOOS == "windows" {
+			color = false
+		}
+		formatter = &logFormatter{logrus.TextFormatter{FullTimestamp: true, DisableColors: !color, ForceColors: color}}
+	}
+	return formatter
 }
