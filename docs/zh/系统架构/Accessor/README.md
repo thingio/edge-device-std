@@ -4,7 +4,7 @@
     1. 设备数据持久化与查询；
         1. 流程：
             1. 设备元数据增加 `recording` 字段，表示是否将采集的设备进行落库；
-            2. accessor 启动后，连接到 manager，先从 manager 获取全量设备元数据，再监听设备元数据的变更（使用 edge-device-std 定义的 operations ）；
+            2. accessor 启动后，先从 manager 获取全量设备元数据，再监听设备元数据的变更（使用 edge-device-std 定义的 operations ）；
             3. 如果设备的 `recording` 字段为 true，则在 accessor 中启动一个 Recorder 监听 event 以及 props 对应的主题，将采集到的数据落库，否则跳过或者关闭
                Recorder；
         2. 是否需要支持多数据源，如 InfluxDB | TDEngine 等？

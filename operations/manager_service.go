@@ -71,6 +71,7 @@ func (m *metaManagerService) subscribe(optType MetaOperationType,
 
 type (
 	DataManagerService interface {
+		Subscribe(topic string) (<-chan interface{}, func(), error)
 		SubscribeDeviceStatus(protocolID string) (<-chan interface{}, func(), error)
 		SubscribeDeviceProps(protocolID, productID, deviceID string, propertyID models.ProductPropertyID) (<-chan interface{}, func(), error)
 		SubscribeDeviceEvent(protocolID, productID, deviceID string, eventID models.ProductEventID) (<-chan interface{}, func(), error)
@@ -83,6 +84,12 @@ type (
 
 func newDataManagerService(mb bus.MessageBus, lg *logger.Logger) (DataManagerService, error) {
 	return &dataManagerService{mb: mb, lg: lg}, nil
+}
+
+func (d *dataManagerService) Subscribe(topic string) (<-chan interface{}, func(), error) {
+	return subscribe(d.mb, d.lg, topic, func(msg *message.Message) (interface{}, error) {
+		return msg, nil
+	})
 }
 
 func (d *dataManagerService) SubscribeDeviceStatus(protocolID string) (<-chan interface{}, func(), error) {

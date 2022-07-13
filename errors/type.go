@@ -18,6 +18,7 @@ var (
 	Driver           = NewType(300000, "Driver")
 	DeviceTwin       = NewType(400000, "DeviceTwin")
 	MetaStore        = NewType(500000, "MetaStore")
+	DataStore        = NewType(600000, "DataStore")
 )
 
 type ErrType struct {
